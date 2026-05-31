@@ -1,0 +1,105 @@
+datasource db {
+  provider = "postgresql"
+  
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ==========================================
+// USER & SYSTEM AUTHENTICATION
+// ==========================================
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relational Links to the 6 Pillars
+  habits        Habit[]
+  habitLogs     HabitLog[]
+  tasks         Task[]
+  books         Book[]
+}
+
+// ==========================================
+// PILLAR 1 & 2: DAILY RITUALS & HABIT INVENTORY
+// ==========================================
+model Habit {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  frequency   String   @default("DAILY") // e.g., "DAILY", "WEEKLY"
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  logs        HabitLog[]
+
+  @@index([userId])
+}
+
+model HabitLog {
+  id          String   @id @default(cuid())
+  habitId     String
+  userId      String
+  completedAt DateTime @default(now()) // Core logic for calculating streaks & the 24h reset
+
+  habit       Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([habitId])
+  @@index([userId])
+}
+
+// ==========================================
+// PILLAR 3: THE COMMAND CENTER
+// ==========================================
+model Task {
+  id          String    @id @default(cuid())
+  userId      String
+  title       String
+  priority    Priority  @default(MEDIUM)
+  isCompleted Boolean   @default(false)
+  dueDate     DateTime? 
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+// ==========================================
+// PILLARS 5 & 6: MONTHLY TBR & GRAND LIBRARY
+// ==========================================
+model Book {
+  id          String    @id @default(cuid())
+  userId      String
+  title       String
+  author      String
+  isCompleted Boolean   @default(false)
+  
+  // Logic Rule Engine: 
+  // If null -> Shows up in Pillar 5 (Monthly TBR)
+  // If timestamped -> Automatically migrates to Pillar 6 (Grand Library)
+  completedAt DateTime? 
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
