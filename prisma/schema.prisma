@@ -5,23 +5,65 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 // ==========================================
-// USER & SYSTEM AUTHENTICATION
+// USER & SYSTEM AUTHENTICATION (Auth.js Compatible)
 // ==========================================
 model User {
   id            String    @id @default(cuid())
   name          String?
   email         String?   @unique
+  emailVerified DateTime?
+  image         String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  // OAuth Account linkages
+  accounts      Account[]
+  sessions      Session[]
 
   // Relational Links to the 6 Pillars
   habits        Habit[]
   habitLogs     HabitLog[]
   tasks         Task[]
   books         Book[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }
 
 // ==========================================
@@ -32,7 +74,7 @@ model Habit {
   userId      String
   name        String
   description String?
-  frequency   String   @default("DAILY") // e.g., "DAILY", "WEEKLY"
+  frequency   String   @default("DAILY")
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -47,7 +89,7 @@ model HabitLog {
   id          String   @id @default(cuid())
   habitId     String
   userId      String
-  completedAt DateTime @default(now()) // Core logic for calculating streaks & the 24h reset
+  completedAt DateTime @default(now())
 
   habit       Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -65,7 +107,7 @@ model Task {
   title       String
   priority    Priority  @default(MEDIUM)
   isCompleted Boolean   @default(false)
-  dueDate     DateTime? 
+  dueDate     DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -90,12 +132,7 @@ model Book {
   title       String
   author      String
   isCompleted Boolean   @default(false)
-  
-  // Logic Rule Engine: 
-  // If null -> Shows up in Pillar 5 (Monthly TBR)
-  // If timestamped -> Automatically migrates to Pillar 6 (Grand Library)
-  completedAt DateTime? 
-  
+  completedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
