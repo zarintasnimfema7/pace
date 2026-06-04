@@ -70,14 +70,15 @@ model VerificationToken {
 // PILLAR 1 & 2: DAILY RITUALS & HABIT INVENTORY
 // ==========================================
 model Habit {
-  id          String   @id @default(cuid())
+  id          String     @id @default(cuid())
   userId      String
   name        String
   description String?
-  frequency   String   @default("DAILY")
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  frequency   String     @default("DAILY") // "DAILY", "WEEKLY", "CUSTOM"
+  customCount Int?       // Stores the integer value if frequency is "CUSTOM" (e.g., 4 times a week)
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
   user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   logs        HabitLog[]
@@ -89,15 +90,17 @@ model HabitLog {
   id          String   @id @default(cuid())
   habitId     String
   userId      String
-  completedAt DateTime @default(now())
+  date        DateTime // Normalized to midnight (YYYY-MM-DD 00:00:00) for clean matrix matching
+  createdAt   DateTime @default(now())
 
   habit       Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // Enforces that a specific habit can only have a single entry per day
+  @@unique([habitId, date])
   @@index([habitId])
   @@index([userId])
 }
-
 // ==========================================
 // PILLAR 3: THE COMMAND CENTER
 // ==========================================
