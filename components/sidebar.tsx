@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { logoutUser } from "@/app/actions/auth-actions"; // Import the Server Action
 import { 
   LayoutDashboard, 
   RotateCw, 
@@ -19,13 +20,21 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   const navItems = [
-    { name: "Today", href: "/", icon: LayoutDashboard },
+    { name: "Today", href: "/dashboard", icon: LayoutDashboard }, // Updated path to point to /dashboard
     { name: "Habits", href: "/habits", icon: RotateCw },
     { name: "Command Center", href: "/command", icon: Terminal },
     { name: "Focus Sanctuary", href: "/focus", icon: Timer },
     { name: "Monthly TBR", href: "/tbr", icon: BookOpen },
     { name: "The Grand Library", href: "/library", icon: Library },
   ];
+
+  const handleSignOut = async () => {
+    try {
+      await logoutUser();
+    } catch (error) {
+      console.error("Failed to execute logout protocol:", error);
+    }
+  };
 
   return (
     <aside className="h-screen w-64 sticky left-0 top-0 border-r border-pace-border bg-pace-card flex flex-col py-10 px-4 shrink-0">
@@ -67,7 +76,10 @@ export default function Sidebar() {
         <Link href="/settings" className="flex items-center gap-3 px-4 py-2.5 text-sm text-pace-textMuted hover:text-pace-textMain transition-colors">
           <Settings className="w-4 h-4" /> Settings
         </Link>
-        <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-pace-urgent hover:opacity-80 transition-opacity text-left">
+        <button 
+          onClick={handleSignOut}
+          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-pace-urgent hover:opacity-80 transition-opacity text-left"
+        >
           <LogOut className="w-4 h-4" /> Sign Out
         </button>
       </div>

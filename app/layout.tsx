@@ -1,7 +1,5 @@
-// app/layout.tsx
-"use client"; // Temporary or permanent depending on path checks
+"use client";
 
-import type { Metadata } from "next";
 import "./globals.css";
 import Sidebar from "@/components/sidebar";
 import { usePathname } from "next/navigation";
@@ -13,14 +11,14 @@ export default function RootLayout({
 }>) {
   const pathname = usePathname();
   
-  // Isolate login and public landing states from the application nav grid[cite: 1]
-  const isAuthPage = pathname === "/login" || pathname === "/welcome"; 
+  // Hide the sidebar navigation grid on the main public landing (`/`) and explicit `/login` paths
+  const isAuthPage = pathname === "/" || pathname === "/login" || pathname === "/welcome"; 
 
   return (
     <html lang="en" className="dark">
       <body className="antialiased">
         <div className="flex min-h-screen bg-pace-bg text-pace-textMain">
-          {/* Only inject sidebar if user is inside the actual dashboard system */}
+          {/* Only inject sidebar if user is inside the actual dashboard app interface */}
           {!isAuthPage && <Sidebar />}
           
           <div className="flex-1 flex flex-col min-w-0 min-h-screen overflow-y-auto">
