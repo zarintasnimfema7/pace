@@ -29,6 +29,7 @@ model User {
   habitLogs     HabitLog[]
   tasks         Task[]
   books         Book[]
+  focusSessions FocusSession[] // 👈 ADD THIS LINE HERE TO SOLVE THE COMPILER MISMATCH
 }
 
 model Account {
@@ -142,4 +143,23 @@ model Book {
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+enum FocusStatus {
+  SUCCESS
+  FAILED
+}
+
+model FocusSession {
+  id        String      @id @default(cuid())
+  userId    String
+  duration  Int         // Total minutes attempted (e.g., 25)
+  status    FocusStatus
+  createdAt DateTime    @default(now())
+
+  // Relationship back to the User model
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
 }
