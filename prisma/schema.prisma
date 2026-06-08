@@ -146,6 +146,7 @@ model Book {
   status      BookStatus  @default(WANT_TO_READ)
   month       String      
   year        Int         
+  totalPages       Int       @default(0)
   completedAt DateTime?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt

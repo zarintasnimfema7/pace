@@ -36,11 +36,12 @@ export async function getBooksByMonth(month: string, year: number) {
 }
 
 /**
- * Add a new book to the Monthly TBR
+ * Add a new book to the Monthly TBR with page tracking metrics
  */
 export async function addBookToTBR(data: {
   title: string;
   author?: string;
+  totalPages?: number; // Added to capture length metrics on initialization
   month: string;
   year: number;
 }) {
@@ -51,6 +52,7 @@ export async function addBookToTBR(data: {
       data: {
         title: data.title,
         author: data.author || "",
+        totalPages: data.totalPages || 0, // Fallback gracefully if left empty
         month: data.month,
         year: data.year,
         status: "WANT_TO_READ",
@@ -76,7 +78,7 @@ export async function completeBook(bookId: string) {
     const userId = await getAuthenticatedUserId();
 
     // Ensure the book belongs to the user before changing state
-    const updatedBook = await prisma.book.updateMany({
+    await prisma.book.updateMany({
       where: {
         id: bookId,
         userId,

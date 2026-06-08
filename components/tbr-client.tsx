@@ -2,12 +2,13 @@
 
 import React, { useState, useTransition, useOptimistic } from "react";
 import { addBookToTBR, completeBook, deleteBook } from "@/app/actions/book-actions";
-import { Plus, BookOpen, CheckCircle, Trash2, Calendar, Loader2 } from "lucide-react";
+import { Plus, BookOpen, CheckCircle, Trash2, Calendar, Loader2, Layers } from "lucide-react";
 
 interface Book {
   id: string;
   title: string;
   author: string | null;
+  totalPages: number; // Added to maintain explicit entity typing across components
   status: string;
   month: string;
   year: number;
@@ -29,6 +30,7 @@ export default function TBRClient({ initialBooks, currentMonth, currentYear }: T
   const [isPending, startTransition] = useTransition();
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
+  const [totalPages, setTotalPages] = useState(""); // Captures raw user character inputs
   
   // Active selectors for planning ahead or looking back
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
@@ -42,7 +44,6 @@ export default function TBRClient({ initialBooks, currentMonth, currentYear }: T
         case "ADD":
           return [...state, action.payload];
         case "COMPLETE":
-          // Filter out the book because it migrates directly into the Grand Library
           return state.filter((book) => book.id !== action.payload);
         case "DELETE":
           return state.filter((book) => book.id !== action.payload);
@@ -61,18 +62,24 @@ export default function TBRClient({ initialBooks, currentMonth, currentYear }: T
     e.preventDefault();
     if (!title.trim()) return;
 
+    // Convert raw string to safe base-10 numerical type representation
+    const parsedPages = parseInt(totalPages, 10) || 0;
+
     const temporaryId = crypto.randomUUID();
     const mockBook: Book = {
       id: temporaryId,
       title: title.trim(),
       author: author.trim() || null,
+      totalPages: parsedPages,
       status: "WANT_TO_READ",
       month: selectedMonth,
       year: selectedYear,
     };
 
+    // Clean inputs immediately to show high-fidelity responsive layout feedback loop
     setTitle("");
     setAuthor("");
+    setTotalPages("");
 
     // Execute instant UI addition
     startTransition(async () => {
@@ -80,6 +87,7 @@ export default function TBRClient({ initialBooks, currentMonth, currentYear }: T
       const result = await addBookToTBR({
         title: mockBook.title,
         author: mockBook.author || undefined,
+        totalPages: mockBook.totalPages,
         month: mockBook.month,
         year: mockBook.year,
       });
@@ -178,6 +186,18 @@ export default function TBRClient({ initialBooks, currentMonth, currentYear }: T
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
               />
             </div>
+            {/* Page Count Field Input Added Below */}
+            <div>
+              <label className="block text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1.5">Total Pages (Optional)</label>
+              <input
+                type="number"
+                min="0"
+                placeholder="352"
+                value={totalPages}
+                onChange={(e) => setTotalPages(e.target.value)}
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:margin-0 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:margin-0 [&::-webkit-inner-spin-button]:appearance-none"
+              />
+            </div>
             <button
               type="submit"
               disabled={isPending || !title.trim()}
@@ -217,7 +237,16 @@ export default function TBRClient({ initialBooks, currentMonth, currentYear }: T
                       </button>
                       <div className="min-w-0">
                         <p className="text-zinc-100 font-medium text-sm truncate">{book.title}</p>
-                        {book.author && <p className="text-zinc-500 text-xs truncate mt-0.5">by {book.author}</p>}
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {book.author && <p className="text-zinc-500 text-xs truncate">by {book.author}</p>}
+                          {book.author && book.totalPages > 0 && <span className="text-zinc-700 text-xs">•</span>}
+                          {book.totalPages > 0 && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-zinc-400 bg-zinc-950 border border-zinc-800/60 px-1.5 py-0.5 rounded">
+                              <Layers className="h-2.5 w-2.5 text-emerald-500/80" />
+                              {book.totalPages} pages
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <button
@@ -249,7 +278,11 @@ export default function TBRClient({ initialBooks, currentMonth, currentYear }: T
                       <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0" />
                       <div className="min-w-0">
                         <p className="text-zinc-400 font-medium text-sm line-through truncate">{book.title}</p>
-                        {book.author && <p className="text-zinc-600 text-xs truncate mt-0.5">by {book.author}</p>}
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {book.author && <p className="text-zinc-600 text-xs line-through truncate">by {book.author}</p>}
+                          {book.author && book.totalPages > 0 && <span className="text-zinc-800 text-xs">•</span>}
+                          {book.totalPages > 0 && <p className="text-zinc-600 text-xs">{book.totalPages} pages</p>}
+                        </div>
                       </div>
                     </div>
                     <span className="text-xs font-medium text-emerald-600/80 bg-emerald-950/30 border border-emerald-900/30 px-2.5 py-1 rounded-full">
