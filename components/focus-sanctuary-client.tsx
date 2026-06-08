@@ -135,10 +135,10 @@ export default function FocusSanctuaryClient({ initialHistory }: FocusSanctuaryC
     let lastOut = 0.0
 
     for (let i = 0; i < bufferSize; i++) {
-      const white = Math.random() * 2 - 1
-      data[i] = (lastOut + 0.02 * white) / 1.02
-      lastOut = data[i]
-      data[i] *= 3.5
+      const white = Math.random() * 2 - 1;
+      data[i] = (lastOut + 0.02 * white) / 1.02;
+      lastOut = data[i];
+      data[i] *= 3.5;
     }
 
     const source = ctx.createBufferSource()
