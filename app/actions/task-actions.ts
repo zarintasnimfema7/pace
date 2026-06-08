@@ -43,3 +43,23 @@ export async function toggleTaskStatus(taskId: string, isCompleted: boolean) {
     return { success: false }
   }
 }
+
+
+export async function deleteTask(taskId: string) {
+  try {
+    const userId = await getUserId()
+    
+    await prisma.task.deleteMany({
+      where: {
+        id: taskId,
+        userId // Protect mutation context strictly against unauthorized cross-user overrides
+      }
+    })
+
+    revalidatePath("/dashboard")
+    return { success: true }
+  } catch (error) {
+    console.error("Task decommissioning failed:", error)
+    return { success: false }
+  }
+}
